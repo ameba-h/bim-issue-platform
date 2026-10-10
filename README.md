@@ -1,5 +1,13 @@
 # BIM 问题管理平台
- [01-介绍](./docs/01-introduction.md)  - [02-入门](./docs/02-getting-started.md)  - [03-配置](./docs/03-configuration.md)  - [04-用户指南](./docs/04-user-guide.md)  - [05-架构](./docs/05-architecture.md)  - [06-数据库](./docs/06-database.md)  - [07-API](./docs/07-api.md)  - [08-开发](./docs/08-development.md)  - [09-设计决策](./docs/09-design-decisions.md)
+- [01-介绍](./docs/01-introduction.md)  
+- [02-入门](./docs/02-getting-started.md)
+- [03-配置](./docs/03-configuration.md)
+- [04-用户指南](./docs/04-user-guide.md)
+- [05-架构](./docs/05-architecture.md)
+- [06-数据库](./docs/06-database.md)
+- [07-API](./docs/07-api.md)
+- [08-开发](./docs/08-development.md)
+- [09-设计决策](./docs/09-design-decisions.md)
 
 面向**建模阶段 BIM 工程师**的问题管理平台 —— 单团队私有化部署，并提供 API / MCP 接口，让 AI 能批量化处理问题。
 
@@ -126,6 +134,9 @@ pnpm user:create
 
 > **文档改过名（2026-09-23）**：原先 7 份文档在根目录、文件名前缀为 `BIM问题管理平台_`。老文档里的历史记录仍可能用旧名，对照关系：
 > `BIM问题管理平台_需求与进度.md` → `docs/1_需求与进度.md` · `_业务规则` → `2_业务规则` · `_数据库设计` → `3_数据库设计` · `_页面设计` → `4_页面设计` · `_前端架构` → `5_1前端架构` · `_接口契约` → `6_2接口契约` · `_评审建议` → `7_1评审建议` · `ER图-2.drawio` → `docs/数据库ER图.drawio`。
+
+
+ [01-介绍](./docs/01-introduction.md)  - [02-入门](./docs/02-getting-started.md)  - [03-配置](./docs/03-configuration.md)  - [04-用户指南](./docs/04-user-guide.md)  - [05-架构](./docs/05-architecture.md)  - [06-数据库](./docs/06-database.md)  - [07-API](./docs/07-api.md)  - [08-开发](./docs/08-development.md)  - [09-设计决策](./docs/09-design-decisions.md)
 
 ## 许可与致谢
 
