@@ -1,5 +1,5 @@
 # BIM 问题管理平台
-- [01-介绍](./docs/01-introduction.md)  - [02-入门](./docs/02-getting-started.md)  - [03-配置](./docs/03-configuration.md)  - [04-用户指南](./docs/04-user-guide.md)  - [05-架构](./docs/05-architecture.md)  - [06-数据库](./docs/06-database.md)  - [07-API](./docs/07-api.md)  - [08-开发](./docs/08-development.md)  - [09-设计决策](./docs/09-design-decisions.md)
+ [01-介绍](./docs/01-introduction.md)  - [02-入门](./docs/02-getting-started.md)  - [03-配置](./docs/03-configuration.md)  - [04-用户指南](./docs/04-user-guide.md)  - [05-架构](./docs/05-architecture.md)  - [06-数据库](./docs/06-database.md)  - [07-API](./docs/07-api.md)  - [08-开发](./docs/08-development.md)  - [09-设计决策](./docs/09-design-decisions.md)
 
 面向**建模阶段 BIM 工程师**的问题管理平台 —— 单团队私有化部署，并提供 API / MCP 接口，让 AI 能批量化处理问题。
 
