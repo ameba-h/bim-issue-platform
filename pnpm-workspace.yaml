@@ -1,0 +1,4 @@
+# esbuild 的 postinstall 只是校验/落二进制，平台包 @esbuild/win32-x64 已自带，跳过也能正常构建
+# （与 ../bim-issue-platform 的口径一致）
+allowBuilds:
+  esbuild: false

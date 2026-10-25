@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50" viewBox="0 0 150 50" role="img" aria-label="BIM 问题管理平台">
+  <title>BIM 问题管理平台</title>
+  <g fill="none" stroke="#3273d6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 46h36"/>
+    <rect x="9" y="6" width="9.5" height="40" rx="1"/>
+    <rect x="23.5" y="13" width="9.5" height="33" rx="1"/>
+  </g>
+  <g fill="none" stroke="#6ea3ec" stroke-width="1.8" stroke-linecap="round">
+    <path d="M9 15h9.5M9 26h9.5M9 37h9.5"/>
+    <path d="M23.5 19h9.5M23.5 28h9.5M23.5 37h9.5"/>
+  </g>
+  <path d="M33.5 19H52" fill="none" stroke="#e5762f" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="30" cy="19" r="3.6" fill="#e5762f"/>
+  <g>
+    <circle cx="56" cy="19" r="2.8" fill="#e5762f"/>
+    <rect x="64" y="16.4" width="78" height="5.2" rx="2.6" fill="#3273d6"/>
+  </g>
+  <g opacity=".45">
+    <circle cx="56" cy="30" r="2.8" fill="#3273d6"/>
+    <rect x="64" y="27.4" width="64" height="5.2" rx="2.6" fill="#3273d6"/>
+    <circle cx="56" cy="41" r="2.8" fill="#3273d6"/>
+    <rect x="64" y="38.4" width="71" height="5.2" rx="2.6" fill="#3273d6"/>
+  </g>
+</svg>

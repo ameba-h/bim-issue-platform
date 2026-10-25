@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="BIM 问题管理平台">
+  <title>BIM 问题管理平台</title>
+  <style>
+    .dot, .halo { transform-box: fill-box; transform-origin: center; }
+    .dot  { animation: breathe 2.6s ease-in-out infinite; }
+    .halo { animation: ping 2.6s ease-out infinite; }
+    @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.16); } }
+    @keyframes ping { 0% { transform: scale(1); opacity: .6; } 70%, 100% { transform: scale(2.6); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .dot { animation: none; }
+      .halo { animation: none; opacity: 0; }
+    }
+  </style>
+  <g fill="none" stroke="#3273d6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 184h160"/>
+    <rect x="44" y="24" width="48" height="160" rx="4"/>
+    <rect x="108" y="56" width="48" height="128" rx="4"/>
+  </g>
+  <g fill="none" stroke="#6ea3ec" stroke-width="4.5" stroke-linecap="round">
+    <path d="M44 56h48M44 88h48M44 120h48M44 152h48"/>
+    <path d="M108 88h48M108 120h48M108 152h48"/>
+  </g>
+  <circle class="halo" cx="144" cy="88" r="15" fill="none" stroke="#e5762f" stroke-width="4"/>
+  <circle class="dot" cx="144" cy="88" r="15" fill="#e5762f"/>
+</svg>
