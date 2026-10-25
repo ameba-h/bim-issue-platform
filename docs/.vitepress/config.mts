@@ -4,16 +4,13 @@ import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Feed } from 'feed'
 
-// DEPLOY_TARGET=pages 时构建 GitHub Pages 版：站点在子路径下，且不能开 cleanUrls
-// （Pages 不做 /foo → /foo.html 的回落）。不设则按阿里云根路径那套走。
-const IS_PAGES = process.env.DEPLOY_TARGET === 'pages'
-const REPO = IS_PAGES ? (process.env.GITHUB_REPOSITORY ?? 'owner/repo').split('/')[1] : ''
-const BASE = IS_PAGES ? `/${REPO}/` : '/'
-const SITE = (IS_PAGES
-  ? `https://${process.env.GITHUB_REPOSITORY_OWNER ?? 'owner'}.github.io/${REPO}`
-  : 'https://lansn.net').replace(/\/$/, '')
+// 站点根地址是唯一的开关：本地/阿里云构建不设它（默认 lansn.net），Actions 构建传 bim.lansn.net。
+// base 从它的路径段推出来 —— 自定义域名（CNAME）指向站点根时是 '/'，
+// 换成 owner.github.io/仓库名 这类项目站点时会自动变成 '/仓库名/'。
+const SITE = (process.env.SITE_URL ?? 'https://lansn.net').replace(/\/+$/, '')
+const SITE_PATH = new URL(`${SITE}/`).pathname.replace(/\/+$/, '')
+const BASE = SITE_PATH === '' ? '/' : `${SITE_PATH}/`
 const HERE = dirname(fileURLToPath(import.meta.url)) // docs/.vitepress
-const HTML_EXT = IS_PAGES ? '.html' : '' // 与 cleanUrls 保持一致，RSS 里的链接要用真实地址
 
 /** 递归收集 srcDir 下的 md（跳过下划线开头的私有片段与 .vitepress） */
 function collectMd(dir: string): string[] {
@@ -56,8 +53,8 @@ function buildRss(srcDir: string, outDir: string) {
     if (url === '/') continue
     feed.addItem({
       title: titleOf(md, url),
-      id: `${SITE}${url}${HTML_EXT}`,
-      link: `${SITE}${url}${HTML_EXT}`,
+      id: `${SITE}${url}`,
+      link: `${SITE}${url}`,
       date: statSync(md).mtime
     })
   }
@@ -71,7 +68,7 @@ export default defineConfig({
   title: 'BIM 问题管理平台',
   description: '面向建模阶段 BIM 工程师的问题管理平台 —— 单团队私有化部署，完整 REST API 与个人 Token，让 AI 批量处理问题。',
   lastUpdated: true,
-  cleanUrls: !IS_PAGES,
+  cleanUrls: true,
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${BASE}logo-mark.svg` }],

@@ -31,8 +31,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # base / 站点绝对地址由 config.mts 从 GITHUB_REPOSITORY 推导，这里只需要声明目标是 Pages
-      - run: DEPLOY_TARGET=pages pnpm docs:build
+      # 绑了 CNAME，站点在域名根，base 由 config.mts 从 SITE_URL 的路径段推出（这里是 /）
+      - run: pnpm docs:build
+        env:
+          SITE_URL: https://bim.lansn.net
 
       - uses: actions/configure-pages@v5
 
