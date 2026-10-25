@@ -104,6 +104,7 @@ export default defineConfig({
       { text: '首页', link: '/' },
       { text: '开始', link: '/guide/introduction', activeMatch: '/guide/' },
       { text: '使用', link: '/use/user-guide', activeMatch: '/use/' },
+      { text: 'MCP 接入', link: '/mcp/access', activeMatch: '/mcp/' },
       { text: '参考', link: '/reference/api', activeMatch: '/reference/' },
       { text: '设计', link: '/design/architecture', activeMatch: '/design/' },
       { text: '开发', link: '/dev/development', activeMatch: '/dev/' },
@@ -123,17 +124,22 @@ export default defineConfig({
           { text: '使用手册', link: '/use/user-guide' }
         ] }
       ],
+      '/mcp/': [
+        { text: 'MCP 接入', items: [
+          { text: '接入与通道口径', link: '/mcp/access' },
+          { text: '工具清单（17 个）', link: '/mcp/tools' }
+        ] }
+      ],
       '/reference/': [
         { text: '参考', items: [
-          { text: 'MCP 工具', link: '/reference/api' },
+          { text: 'API 契约', link: '/reference/api' },
           { text: '数据库设计', link: '/reference/database' }
         ] }
       ],
       '/design/': [
         { text: '设计', items: [
           { text: '架构与技术选型', link: '/design/architecture' },
-          { text: '设计决策记录', link: '/design/decisions' },
-          { text: '第三方评审快照', link: '/design/review' }
+          { text: '设计决策记录', link: '/design/decisions' }
         ] }
       ],
       '/dev/': [
@@ -168,8 +174,7 @@ export default defineConfig({
     returnToTopLabel: '回到顶部',
 
     footer: {
-      message: '文档内容与代码同源；过程记录（决策日志、接口契约、评审意见）保留在仓库的 docs/ 目录。',
-      copyright: 'lansn.net · ICP 备案号待备案通过后填入'
+      copyright: '© 2026 过河卒子 · lansn.net · ICP 备案号待备案通过后填入'
     }
   }
 })

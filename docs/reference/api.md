@@ -21,13 +21,13 @@
 | 凭据 | 传输 | 适用 |
 |---|---|---|
 | 会话 | `nuxt-session` sealed Cookie（HttpOnly） | 浏览器前端 |
-| API Token | `Authorization: Bearer <token>` | 脚本 / AI / MCP 客户端 |
+| API Token | `Authorization: Bearer <token>` | **MCP 通道专用** —— 只给 AI 客户端经 `/mcp` 那层薄壳用 |
 
-两条铁律：**一人一 token**（身份全局唯一、不携带权限 —— 每次请求按「该用户在该项目内的角色」现查现判）；**凭据只能发给人类账户**（AI 账户不持有可用凭据，`403 AI_SUBJECT_FORBIDDEN`）。
+三条铁律：**一人一 token**（身份全局唯一、不携带权限 —— 每次请求按「该用户在该项目内的角色」现查现判）；**凭据只能发给人类账户**（AI 账户不持有可用凭据，`403 AI_SUBJECT_FORBIDDEN`）；**令牌是 MCP 专属凭据** —— 拿它直连本文任一 REST 端点（**GET 也算，自己写脚本也算**）一律 `403 TOKEN_AI_CHANNEL_ONLY`，**人查数据用网页**。
 
-### AI 代理执行（模式 A）
+### AI 代理执行
 
-请求头三件套：
+请求头三件套 —— **由 MCP 薄壳转发时注入，客户端不需要、也没法自己声明**（自带的声明头一律无效，声明可伪造，而 AI 账户编号从操作记录里就能读到）：
 
 ```
 Authorization: Bearer <发令人的Token>
@@ -193,4 +193,7 @@ X-Agent-Id: <AI账户的ULID>     # 必须是 users.subject_type='ai' 的账户
 
 ## MCP
 
-规划为 REST 之上的**薄壳**：只做 MCP 协议 ↔ HTTP 的翻译与转发（`Authorization` 头原样透传），不重复实现权限 / 业务规则 / 数据库访问。REST 侧改字段或规则时，MCP 侧只需改工具描述。本契约即 MCP 的唯一事实来源。
+REST 之上还有一层 MCP 薄壳（17 个工具，随平台进程启动，接入只需一个 URL + 一枚令牌）。它不 import 服务层、不查库、不做映射层，**本文这些端点就是它的唯一事实来源**；工具清单、通道口径与已知边界都在 MCP 那两页里：
+
+- [接入与通道口径](/mcp/access) —— 怎么配、令牌为什么只能走这一条路、三个身份怎么落；
+- [工具清单（17 个）](/mcp/tools) —— 逐个工具的行为差异与要点。

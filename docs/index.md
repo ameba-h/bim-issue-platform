@@ -23,8 +23,8 @@ hero:
       text: 使用手册
       link: /use/user-guide
     - theme: alt
-      text: MCP 工具
-      link: /reference/api
+      text: MCP 接入
+      link: /mcp/access
 
 features:
   - icon: 📝
