@@ -1,25 +1,58 @@
 # 快速开始
 
-> 前置要求：**Node.js ≥ 22**（需要内置 `node:sqlite`）+ **pnpm 11**。全程零原生依赖，不需要 C++ 编译工具链。
+> 这个平台有三种跑法，先认清自己要哪一种：**绿色包**（一台电脑、不想装任何东西）、**标准部署包**（团队共用或放服务器）、**源码运行**（要改代码的二次开发者）。三种跑法默认端口都是 **5555**。
 
-## 1 · 克隆与安装
+## 1 · 🚀 选一种跑法
+
+| 跑法 | 怎么起 | 数据库 | 适合谁 |
+|---|---|---|---|
+| 绿色包 | 解压、双击 `启动.bat` | 内置演示库，开箱就见示例项目 | 现场一台机，零安装 |
+| 标准部署包 | 自装 Node，双击 `run.bat`（Linux 跑 `run.sh`） | 首启自动建**干净空库**，SQLite / MySQL 皆可 | 正式环境 / 服务器 |
+| 源码运行 | `pnpm dev` | 自己建库 | 二次开发 |
+
+## 2 · 📦 绿色包：免安装，双击就跑
+
+给「只想用，不想折腾环境」的人。目标机器**什么都不用装**——包内自带运行环境。
+
+1. 从顶栏「**下载绿色包**」下载 Windows x64 压缩包（Gitee 发行页）；
+2. 解压到任意目录；
+3. 双击 `启动.bat`：首次会自动生成配置，然后打印本机与局域网地址、几秒后自动打开浏览器（不想自动开，启动前设 `NO_BROWSER=1`）。
+
+要知道的几件事：
+
+- 包里带着**演示库和示例附件**，第一次打开就能看见示例项目、直接登录体验；登录账号与口令写在**包根那份 `使用说明.txt`** 里，本站不张贴口令，首次登录后请立即改密；
+- 启动窗口关掉 = 服务停止，最小化没问题；想长期跑，双击 `安装为开机自启.bat` 注册成开机任务，之后无窗口后台运行；
+- 数据全在包根 `data\` 一个目录里（库文件 + 上传的截图、附件、模型）——**备份 = 整个目录拷走，恢复 = 拷回来**；
+- ⚠️ 要改端口的话，`启动.bat` 和 `service-run.bat` 里各有一颗端口设置，**两处要一起改**，否则会出现「手动起在 5556、自启还在 5555」。
+
+## 3 · 🖥️ 标准部署包：团队与服务器
+
+跨平台（Linux 服务器为主，Windows 亦可），**唯一要手动做的是装 Node**（22.9 以上），其余一键到底：
+
+1. 从 Gitee 发行页下载标准包，解压；
+2. Windows 双击 `run.bat`，Linux 跑 `bash run.sh`：缺配置自动生成（含随机会话密钥）、缺库自动建，然后起服务；
+3. 标准包是**干净系统**：首启建空库并自动创建一个默认平台管理员，**初始口令在启动窗口里打印**——本站不张贴口令，登录后立即改密。
+
+团队要共用一个数据库、或要接公司现成 MySQL 的，用同样的方法即可：配置里把数据库换成 MySQL 档，建表脚本随包带着，用自己的数据库客户端执行一遍就行。Linux 常驻推荐用包内的 systemd 服务单元示例（`bim-issue.service`）。细节见 [配置与部署](/guide/configuration)。
+
+## 4 · 💻 源码运行：二次开发
+
+前置要求：**Node.js ≥ 22**（数据库用 Node 内置的 SQLite，不用装任何数据库）+ **pnpm**。全程零原生依赖，不需要 C++ 编译工具链。
 
 ```bash
-git clone <仓库地址> && cd bim-issue-platform
+git clone https://gitee.com/ameba-h/bim-issue-platform && cd bim-issue-platform
 pnpm install
+cp .env.example .env      # 然后按下面改三行
+pnpm db:init              # 建一份干净的库，默认落在 data/bim_issue.db
+pnpm dev                  # 起在 http://localhost:5555
 ```
 
-## 2 · 配置
-
-```bash
-cp .env.example .env
-```
-
-`.env` 不会入库（已在 `.gitignore` 中）。单机试用只需确认 / 修改两行：
+`.env` 绝不入库（已在 `.gitignore` 中），日常只需要动三行：
 
 ```ini
-DATABASE_CLIENT=sqlite                              # 默认模板是 mysql，单机试用请改为 sqlite
-NUXT_SESSION_PASSWORD=<一个 ≥32 字符的随机串>        # 替换占位符
+DATABASE_CLIENT=sqlite
+DATABASE_FILE=./data/bim_issue.db
+NUXT_SESSION_PASSWORD=<一个 ≥32 字符的随机串>
 ```
 
 生成随机串：
@@ -28,78 +61,45 @@ NUXT_SESSION_PASSWORD=<一个 ≥32 字符的随机串>        # 替换占位符
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ```
 
-> 完整配置项说明见 [配置与部署](/guide/configuration)。
+> 登录会话要用这串随机码来加密。开发期不设它，系统会临时生成一个，但**换掉这串会让所有已登录的会话失效**；生产环境必须显式配置。建库时会**自动创建一个默认平台管理员**，初始口令在建库输出里给出，本站不张贴。完整配置项见 [配置与部署](/guide/configuration)。
 
-## 3 · 建库
+> 包管理器只用 pnpm（仓库里只有 pnpm 的锁文件），别混用 npm / yarn。
 
-```bash
-pnpm db:init
-```
+四条必读的提醒：
 
-SQLite 模式建库到 `data/bim_issue.db`，并在建表后**自动创建默认管理员**（幂等 —— 库里已有平台管理员则跳过）：
+- `pnpm db:init -- --force` 会**先把库文件删掉再重建** —— 这是唯一一条会物理删库的路径，日常别跑；
+- 表结构升级走另一条命令 `pnpm db:migrate`，它按库里的迁移记账决定跑哪几条，重复跑不会重放；
+- 改过表定义后要重建 SQLite 库可以删文件重跑；重建 **MySQL** 库则**必须先把全部旧表清掉**再跑 `pnpm db:init:mysql` —— 建库 SQL 只建不改，对着已存在的表什么都不动，不清表的话症状是「不报错、但数字还是旧的」；
+- 建完核对一眼 `pnpm db:check`（把几份表定义互相对拍，防漂移）。
 
-| 账号 | 口令 | 说明 |
-|---|---|---|
-| `admin` | 出厂默认值写在仓库的建号脚本里 | 平台管理员。⚠️ 首次登录后请立即改密；本站不张贴可用口令 |
-
-忘记口令时重置（交互式录入，不进 shell 历史）：
-
-```bash
-pnpm user:create --username admin --reset-password
-```
-
-想自定义首个管理员（换账号名 / 口令）：
-
-```bash
-pnpm user:create
-```
-
-## 4 · （可选）灌入演示数据
-
-```bash
-pnpm db:seed-demo                # 先加 -- --dry-run 可预览
-```
-
-演示数据包含：6 个虚构角色账号（统一口令见 `scripts/db/seed_demo.ts`，本站不张贴）+ 4 个虚构项目（每个自动初始化 41 项标准分类）+ 预置问题 / 答复 / 留痕，用于体验完整的角色权限差异。
-
-| 账号 | 姓名 | 在「云璟商业中心」里的角色 |
-|---|---|---|
-| `demo_wangcy` | 王重阳 | 项目负责人 |
-| `demo_qiaof` | 乔峰 | 土建专业负责人 |
-| `demo_dongfbb` | 东方不败 | 机电专业负责人 |
-| `demo_duany` | 段誉 | 工程师 |
-| `demo_zhaom` | 赵敏 | 甲方 |
-| `demo_yuebq` | 岳不群 | 协同方 |
-
-> 演示账号与项目全部虚构，仅用于演示 / 测试；生产环境不会有这些账号。完整角色矩阵见 [使用手册](/use/user-guide)。
-
-## 5 · 启动
-
-```bash
-pnpm dev            # http://localhost:5555
-```
-
-开发端口固定为 5555（定义在 `nuxt.config.ts`）。登录后请先改掉默认口令。
-
-## 6 · 生产构建
+生产构建：
 
 ```bash
 pnpm build
-pnpm preview        # 预览构建产物
+node --env-file-if-exists=.env .output/server/index.mjs
 ```
 
-> 鉴权模块要求保留 Nitro 服务器（`nuxt build`），**不支持** `nuxt generate` 纯静态导出 —— 本项目是 SPA（`ssr: false`）但服务端仍承担全部 API。
+> 鉴权模块要求保留 Nitro 服务器（`pnpm build`），**不支持** `nuxt generate` 纯静态导出 —— 页面是 SPA，但服务端仍承担全部接口。
+
+## 5 · ▶️ 端口：三种跑法统一 5555
+
+不管哪种跑法，默认都是 **5555**。源码跑的端口定义只在 `nuxt.config.ts`，**不要自己另挑端口**、不要用 `--port` 覆盖；起之前先看一眼 5555 上是不是已经有一个在跑的实例——有就直接用那一个（`netstat -ano | findstr :5555`），否则同事和你各起一台、互相对不上。标准包在 `.env` 的 `PORT`，绿色包见第 2 节那两处。
+
+## 6 · ✅ 第一次跑起来的自查
+
+- [ ] 浏览器打开 `http://localhost:5555`，能进登录页；绿色包按 `使用说明.txt` 的账号登录，能看见示例项目和问题列表；
+- [ ] 「项目设置」里能看到 41 项标准分类；
+- [ ] 新建问题贴一张截图，能正常出缩略图（图像处理是纯 JS，不需要编译）；
+- [ ] 上传一个 IFC 模型：没装 Python 也会**上传成功**，只有解析那一栏变成失败并写明这台机上该执行哪条命令 —— 解析起不来不算上传失败；装好 Python 后**重启**再传即可解析成功；
+- [ ] 二次开发者改完代码，跑一次 `pnpm check:all`（类型检查 + lint + 单测 + 文档自检 + 表定义对拍）全绿才算这一轮完。
 
 ## 常见问题
 
 **Q：启动时警告 `SQLite is an experimental feature`？**
-正常。SQLite 驱动用的是 Node 22 内置的 `node:sqlite`（目前标记为实验特性），启动参数里已加 `--disable-warning=ExperimentalWarning` 压掉大部分警告，个别场景仍可能看到，不影响使用。
+正常。SQLite 驱动用的是 Node 内置的 `node:sqlite`（目前还标记为实验特性），启动时已尽量压掉警告，个别场景仍可能看到，不影响使用。
 
-**Q：想直接用带数据的演示库？**
-仓库自带 `data/bim_issue_demo.db`（已灌好演示数据）。在 `.env` 里加一行 `DATABASE_FILE=./data/bim_issue_demo.db`，跳过第 3 / 4 步直接启动。
+**Q：忘记管理员口令了？**
+绿色包和标准包：口令指路看各自包根的说明文件；也可以在任何一份库上用命令重置（交互式录入，不进命令行历史）：`pnpm user:create --username admin --reset-password`。
 
-**Q：团队要共用同一个开发库？**
-改用 MySQL：`.env` 保持 `DATABASE_CLIENT=mysql` 并填好连接信息，建库命令换成 `pnpm db:init:mysql`，其余步骤相同。详见 [配置与部署](/guide/configuration)。
-
-**Q：端口 5555 被占了？**
-Nuxt 会自动顺延到下一个可用端口（以启动日志为准）；或修改 `nuxt.config.ts` 的 `devServer.port`。
+**Q：端口 5555 被占了怎么办？**
+先分清是不是已经有实例在跑 —— 是就直接用那一个。确实要挪端口，改的是定义处（见第 5 节），别临时覆盖。

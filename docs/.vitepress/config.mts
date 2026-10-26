@@ -174,7 +174,7 @@ export default defineConfig({
     returnToTopLabel: '回到顶部',
 
     footer: {
-      copyright: '© 2026 过河卒子 · lansn.net · ICP 备案号待备案通过后填入'
+      copyright: '本站由 VitePress 构建 · © 2026 过河卒子 · ICP 备案号'
     }
   }
 })

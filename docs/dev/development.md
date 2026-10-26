@@ -1,107 +1,141 @@
 # 开发者指南
 
-## 环境搭建
+> 给要改代码的人：怎么把开发环境立起来、有哪些命令、门禁卡在哪、两层测试各盖什么、以及前人真踩过并写下来的坑。
 
-前置：Node.js ≥ 22 + pnpm 11（本项目 `packageManager` 固定为 `pnpm@11.6.0`；**Windows 下若遇 pnpm 自动切换版本报错，确认本机版本与该字段一致即可**）。
+## ⚙️ 环境搭建
+
+前置：**Node.js ≥ 22** + **pnpm**（`packageManager` 固定版本；Windows 下若遇 pnpm 自动切换版本报错，确认本机版本与该字段一致即可）。
 
 ```bash
 pnpm install
-cp .env.example .env     # 单机开发改 DATABASE_CLIENT=sqlite
-pnpm db:init             # 建库（SQLite）+ 自动建 admin
-pnpm db:seed-demo        # 可选：演示数据
+cp .env.example .env     # 单机开发改 DATABASE_CLIENT=sqlite + 会话密钥
+pnpm db:init             # 建一份干净的库（SQLite）+ 自动建默认管理员
 pnpm dev                 # http://localhost:5555
 ```
 
-> `pnpm-workspace.yaml` 中固定了 `nodeLinker: hoisted`（npm 风格扁平布局）。这是为规避 Windows + 特定路径组合下 pnpm isolated 软链建链失败的坑而设，**请勿删除**（`pnpm-lock.yaml` 与它必须随仓库走）。
+> `pnpm-workspace.yaml` 中固定了 `nodeLinker: hoisted`（npm 风格扁平布局）。这是为规避 Windows + 特定路径组合下软链建链失败的坑而设，**请勿删除**；`pnpm-lock.yaml` 与它必须随仓库走。包管理只用 pnpm，别混用 npm / yarn。
 
-## 常用命令
+## 📦 常用命令
 
 | 命令 | 作用 |
 |---|---|
 | `pnpm dev` / `build` / `preview` | 开发 / 构建 / 预览 |
-| `pnpm lint` · `typecheck` | 代码规范（`eslint --max-warnings=0` 口径）/ 类型检查 |
-| `pnpm db:generate`(:mysql) | 由 schema 生成迁移 SQL |
-| `pnpm db:migrate` | 执行迁移 |
-| `pnpm db:check` | **四份表结构定义对拍**（改了表结构必跑） |
+| `pnpm lint` · `typecheck` | 代码规范（`--max-warnings=0` 口径）/ 类型检查 |
+| `pnpm test` | 服务端单测，秒级，任何时候都能跑 |
+| `pnpm test:e2e` | 界面端到端整条，分钟级，**跑之前先关掉 5555**（见「测试」一节） |
+| `pnpm db:generate`(:mysql) | 由表定义生成迁移 SQL |
+| `pnpm db:migrate` | 执行尚未应用的迁移（重复跑不会重放） |
+| `pnpm db:check` | **四份表定义对拍**，改过表结构必跑 |
 | `pnpm db:seed-tags` | 给项目补灌 41 项标准分类（只补缺、不改不删） |
-| `pnpm db:seed-demo` | 灌演示数据（`--dry-run` 预览） |
-| `pnpm user:create` | 交互式建账号 / 重置口令（`--username x --reset-password`；`--dry-run` 预览） |
-| `pnpm doc:check` | 全项目禁用字符自检（带圈数字、节符等小字符） |
-| `pnpm check:all` | **一次跑完**：typecheck + lint + doc:check + db:check |
+| `pnpm user:create` | 建真实账号；`--username <名> --reset-password` 交互式重置已有口令 |
+| `pnpm doc:check` | 禁用字符自检（带圈数字、节符那类小字符） |
+| `pnpm check:all` | **一轮改动是否算完的判据**：typecheck + lint + 单测 + doc:check + db:check |
 
-## 代码门禁（git 钩子）
+## 🚧 代码门禁（git 钩子）
 
-配置在 `.githooks/`（仓库已设 `core.hooksPath`），本地即门禁：
+钩子在 `.githooks/`（仓库已设 `core.hooksPath`，全仓共享），本地即门禁：
 
-| 时机 | 跑什么 |
-|---|---|
-| `pre-commit` | 禁用字符自检 + 四份表结构对拍（秒级） |
-| `pre-push` | typecheck + lint + 上面两项（即 `check:all`） |
+| 时机 | 跑什么 | 大概耗时 |
+|---|---|---|
+| pre-commit | 禁用字符自检 + 四份表定义对拍 + 全仓 lint | 约 5 秒 |
+| pre-push | `pnpm check:all`（即再加 typecheck 与单测） | 数十秒到 2 分钟 |
+| 手动 | `pnpm test:e2e` 整条 | 分钟级 |
 
-> 不用云 CI 的原因：目标托管平台（Gitee Go）的构建镜像 Node 版本过低，跑不动 Nuxt 4 + `node:sqlite`；本地门禁效果等效且拦截更早。紧急情况可 `--no-verify` 跳过（不推荐）。
+三条设计口径：
 
-## 目录结构与协作约定
+- **typecheck 放推送不放提交** —— 它约 40 秒，挂在提交上会让人想绕；而禁用字符、表结构漂移、lint 瑕疵这三件历史上都是「忘了跑、事后才发现」，所以前移到提交动作上；
+- **e2e 刻意不进自动检查**：分钟级的门禁人人绕开，等于没有。替代办法是**每周固定手动跑一次整条并报数**；
+- **永远不要跳过钩子提交**。钩子拦下来说明有真问题（已经真拦过两次：一次 lint 风格错、一次字符自检）。提交输出不要吞，提完核对真提交了什么。
 
-| 目录 | 归属 |
-|---|---|
-| `app/`（页面 / 组件 / composables / 工具） | 前端 |
-| `server/`（API / 鉴权 / 数据库） | 后端 |
-| `shared/`（前后端共用类型） | **只能新建、不能删除**（删掉会连带另一边编译失败；确需移除先协商） |
-| `scripts/db/` | 后端工具；`scripts/doc/`、`scripts/user/` 通用 |
-| `docs/*.md` | 谁主张谁改，提交信息里写明 |
+⚠️ 一处「**绿不等于装好了**」的坑：残缺的依赖包能让 `check:all` 照样全绿。判完整性看 `node_modules` 里那个包自己的 `package.json` 在不在，**别用 `require.resolve`**（它会命中别的副本）。
 
-单人维护时这些边界自然消解，但两条工程纪律建议保留：
+## 🧪 测试：两层，不是一套
 
-1. **接口看契约** —— 不自己发明字段名 / 错误码 / 路径；字段与语义变更必须先改 `docs/6_2接口契约.md` 再动代码；
-2. **权限 / 状态机只认《业务规则》**（`docs/2_业务规则.md`），**表结构以 `schema.ts` 为准**，各文档分工见其标头。
+| | 服务端单测 | 界面端到端（e2e） |
+|---|---|---|
+| 位置 | `tests/server/` | `tests/e2e/` |
+| 工具 | vitest | Playwright + **系统已装的 Chrome** |
+| 测什么 | 服务端**纯函数层**，数据库全 mock | 真服务 + 真浏览器，从界面点进去 |
+| 耗时 | 秒级 | 四五分钟（**数量与耗时都以当场重跑为准**，文档里的数字都是快照） |
+| 进不进 `check:all` | 进 | 不进（理由见上一节） |
+| 碰不碰你的本地库 | **完全不碰**（不连库、不建文件） | **完全不碰**（另起临时库，见下） |
 
-## 代码规范要点（来自契约的审查必查项）
+两条分工口径，因为它们是这两层存在的理由：**单测只钉「判据」** —— 文件类型四道双判、超限截图兜底、筛选参数什么算「传了空」、幂等键重放怎么原样返回、整套模型合计闸按什么判、解析环境四态怎么定，全是历史上真出过事的判断；**e2e 只跑「链路」** —— 守卫拦不拦、徽标翻不翻、批量逐条报原因、AI 通道闸在 `/mcp` 那一侧生效没有、导出成品里答复在不在场，价值在跨层的东西。
+
+**e2e 的三条环境纪律**（都写死在配置里）：
+
+- **不下载浏览器二进制**：直接驱动系统 Chrome。交付口径是「零原生依赖、内网可装」，测试也不往缓存里塞一百多 MB；
+- **不碰演示库**：库、上传、导出、会话密钥全部指到项目根 `tmp/e2e/`，每轮全量重灌；这一族产物**不可能被提交**（`.gitignore` 的 `tmp/` 整棵覆盖），也**不许放回 `data/` 下**；
+- **专用端口 5599**，5555 留给日常开发。⚠️ 最容易咬人的一条：**两台 dev 同时活着会共用同一棵构建缓存目录，一边重启就掀掉另一边的运行进程** —— 症状看着像代码崩了，其实是环境。所以跑整条 e2e 之前先把 5555 关掉，跑的过程中别改被 watch 的文件。
+
+链路共用同一份临时库、**刻意串行跑**（种子数据是共享状态，并行结果不可复现）。由此一条纪律：**任何一条链路写数据都可能翻掉另一条的断言**，所以「某人在全库没有留痕」这类判据不许用。写用例首选走接口造数据；只有接口已经造不出来的形状才允许直写那份临时库。
+
+**选择器口径**：一律用界面上的角色 + 中文可见文案 / 占位符定位，不用 CSS 类名 —— 类名是原子样式，改个样式就断；语义名断了多半是真有问题。
+
+**验收口径**：导出这类成品**一律以解开的成品为准，不看状态码** —— 真把 zip / docx / xlsx 解开数行数；`test-results/` 里的截图只是失败现场证据，不是验收物，那棵目录随时可整棵删掉。
+
+**数字当场重数**，别照任何文档记载对账：
+
+```bash
+pnpm test 2>&1 | tail -4                          # 单测的文件数与用例数
+grep -h "^\s*test(" tests/e2e/*.spec.ts | wc -l   # e2e 用例数
+cat test-results/.last-run.json                   # 上一轮 e2e 的状态与失败清单
+```
+
+## 🗂️ 目录与模块约定
+
+| 目录 | 里面是什么 | 改动纪律 |
+|---|---|---|
+| `app/` | 前端：页面 / 组件 / composables / 工具 | 页面不写裸角色比较，走 `utils/permission.ts` |
+| `server/` | 后端：API / 鉴权 / 数据库 / 启动插件 | 通道闸、空字符闸、冻结闸在 `defineApiHandler` 集中判，新增端点默认落在闸内 |
+| `shared/types/` | 前后端共用的接口形状，按域拆 | 后端可加成员；**删成员要全仓 grep 零引用 + 两侧类型检查都绿**；类型对不上一律在这一层对齐，不让前端就着后端实现改 |
+| `scripts/` | 建库迁移 / 文档门禁 / 绿色包 / IFC 转换器 / 建号 | 出包类脚本是裸 `node` 跑的，不在 `package.json` 里 |
+| `docs/`（本平台仓） | 现行口径册 | 文档与代码对不上时**以代码为准、改文档**；例外：接口那一族的字段与错误码以册子为事实来源 |
+
+两条要保留的工程纪律：
+
+1. **接口看契约** —— 不自己发明字段名 / 错误码 / 路径；字段与语义变更先改契约（站点口径见 [API 契约](/reference/api)）再动代码；错误码**不自行新增**，要加先议；
+2. **权限与状态机只认现行规则口径**（[使用手册](/use/user-guide)与 [设计决策](/design/decisions)），**表结构以 `server/database/schema.ts` 为准**，改完必跑 `pnpm db:check`。
+
+## 📏 代码规范要点（审查必查项）
 
 | # | 规则 | 为什么 |
 |---|---|---|
-| 1 | 前端不得按 `message` 文字判分支（只认 `error.code`） | 文案随时优化，靠文案判分支会静默失效 |
+| 1 | 前端不得按 `message` 文字判分支，只认 `error.code` | 文案随时优化，靠文案判分支会静默失效 |
 | 2 | 业务 SQL 的 `WHERE` 必须带 `project_id`；禁止「先按 id 查出来再判断归属」的两步式 | 跨项目越权唯一的入口防线 |
-| 3 | 权限判断只走 `server/utils/authz.ts`，禁止路由里散写 `role ===` | 散写必然出现「页面拦住了、接口没拦」 |
+| 3 | 通道 / 空字符 / 冻结三道闸只在 `defineApiHandler` 集中判；**跨资源**的角色判断禁止散写（「仅执行人」这类本动作断言在各端点自己写，角色集合收在 `shared/types/auth.ts` 联合类型里，漏分支类型检查会响） | 散着判必漏，漏一个就是「冻结了还能写」 |
 | 4 | 调批量接口必须读 `failed` / `results[]`，不能只看 HTTP 200 | 部分成功照常返回 200 |
-| 5 | 写接口的七步顺序不可调换（见 05-architecture）；写库与写留痕同事务 | 「数据改了、留痕没写」比不改更糟 |
-| 6 | 枚举一律 `VARCHAR + CHECK`，时间读写过 `server/database/time.ts` | 双方言兼容 |
+| 5 | 写请求的固定顺序不可调换（三道闸 → 凭据 → 项目与成员 → 断言 → 业务校验 → 事务落库 + 同事务留痕 → 返回） | 「数据改了、留痕没写」比不改更糟 |
+| 6 | 枚举一律字符串 + CHECK 约束；时间读写只过 `server/database/time.ts`；表只从 `server/database/tables.ts` 取 | 双方言兼容；两套表定义混用不报错但静默出错 |
+| 7 | 文件动作一律在事务外：先落盘、再写库，失败删掉刚落的文件；真实异步 I/O 严禁进事务 | 反过来会留下「库里有记录、磁盘没文件」的坏数据 |
 
-前端侧补充：页面不写裸角色比较（走 `utils/permission.ts`）；接口类型只出自 `shared/types/`；取数只经 `useApi`（唯一例外是 `nuxt-auth-utils` 自身的会话端点与 `/api/auth/*`）；一个列表只有一个取数触发点（`useAsyncList` 的 getter）。
+前端侧补充：接口类型只出自 `shared/types/`；取数只经分域封装（`useApi` 一族），页面不碰路径字符串；一个列表只有一个取数触发点；**幂等键由发起用户操作的那一层生成并持有**（重试复用、改内容才换），不在请求封装层每次现生成。
 
-## 依赖纪律
+## 🔒 依赖纪律
 
-**纯 JS 允许，需要本地编译的原生模块禁止。** 现有等价物：
+**纯 JS 允许，需要本机编译或下载平台二进制的模块禁止。** 现有等价物：
 
 | 需求 | 用 | 不用（原生） |
 |---|---|---|
-| SQLite | Node 22 内置 `node:sqlite` | better-sqlite3 |
+| SQLite | Node 内置 `node:sqlite`（按需加载，不在顶层静态 import） | better-sqlite3 |
 | 密码哈希 | 内置 `crypto.scrypt` | bcrypt / argon2 |
 | 图像处理 / 缩略图 | jimp（纯 JS） | sharp |
-| WebP 编解码 | @jsquash/webp（WASM，本地加载） | — |
-| 打包 / Excel / Word | fflate / exceljs / docx | — |
+| WebP 编解码 | @jsquash/webp（WASM，本地加载、不联网） | — |
+| 打包 / Excel / Word | fflate / exceljs / docx | 任何 Office COM 调用 |
+| 模型解析 | 可选的外部 Python 子进程，缺了不拦上传 | 常驻 Python 服务 |
 
-新增依赖前先问：内网无外网环境装不装得上？双平台（Linux / Windows）都免编译吗？
+新增依赖前先问两句：内网无外网环境装不装得上？Linux / Windows 双平台都免编译吗？
 
-## 测试与验证
+## 🧯 已知坑（少走弯路）
 
-- 表结构：`pnpm db:check`（四份定义对拍：列 / 索引 / 外键 / CHECK 逐项比对）；
-- 冒烟：`scripts/db/smoke_test.ts`（建库后可跑的基础链路验证）；
-- 类型与风格：`pnpm typecheck && pnpm lint`；
-- **未注册组件这类错误 typecheck 查不出来**（Vue 运行时才报），界面改动请实际打开浏览器点一遍 —— 本项目开发过程中「静态全绿但点了才知道坏」的案例不止一次（如 `UButtonGroup` 在 Nuxt UI v4 中已改名 `UFieldGroup`、`<label>` 包按钮导致点击不弹文件框）。
-
-## 已知坑（少走弯路）
-
-- `pnpm-workspace.yaml` 的 `nodeLinker: hoisted` 与 `pnpm-lock.yaml` 必须随仓库走（见上）；
-- 改 `schema*.ts` 后必跑 `pnpm db:check` —— 文本解析对写法敏感，`(t) =>` 回调被改写形式会静默漏读索引；
-- MySQL 开发库重建须先手工 DROP 全表（`CREATE TABLE IF NOT EXISTS` 不会应用新 DDL）；
-- `.env` 的 `DATABASE_PASSWORD` 含 `#` 等字符时必须双引号包裹；
-- Nuxt UI v4 与 v3 组件名差异大（`UButtonGroup` → `UFieldGroup` 等），写组件前对照 `node_modules/@nuxt/ui` 实际导出；
-- `UDropdownMenu` 的搜索框用 `:filter` prop 而非 `#header` 插槽（插槽在 v4 渲染为空注释）；
-- `UTable` 定宽列必须配 `min-w`（`table-layout: auto` 下只写 `w-`/`max-w-` 会被 `w-full` 列挤回最小内容宽）；
-- Git Bash 下用 curl 传中文 JSON 会被 Windows 代码页转成乱码 —— **body 一律走 UTF-8 文件**（`curl --data-binary @file.json`）。
-
-## 文档结构说明
-
-- **本站文档**：由 VitePress 构建，源文件在站点仓库的 `docs/` 目录下，分「开始 / 使用 / 参考 / 设计 / 开发」五组；要改哪一页就改对应的 md，页面顺序由侧栏配置决定，跟文件名前缀无关；
-- **平台仓库的过程文档**：项目全程记录 —— 需求决策日志（只追加）、业务规则、数据库 / 页面 / 前端架构设计、接口契约（唯一事实来源）、历次评审与校审意见、前后端对接记录。它的文件命名与本站对不上号是正常的，那是历史。查阅决策来龙去脉时有用，但**过程状态（已完成 / 已划掉）不代表当前代码状态**，以代码与本站为准；
-- **依赖官方文档的离线快照**（约 14 MB）：Nuxt / Drizzle 等第三方资料，不属于本项目，仅供离线查阅。
+- `nodeLinker: hoisted` 与 `pnpm-lock.yaml` 必须随仓走（见环境搭建）；
+- 改 `schema*.ts` 后必跑 `pnpm db:check` —— 对拍脚本用文本解析读 schema，对写法敏感：`(t) => [...]` 回调被改写成别的形式会**静默漏读索引**（表现是「整表索引凭空消失」）；
+- MySQL 库重建须先手工 DROP 全表（建表 SQL 全是 `IF NOT EXISTS`，对着已存在的表什么都不动，改 DDL 不生效且不报错）；
+- SQLite 每条连接都要执行 `PRAGMA foreign_keys = ON` —— 它是连接级不是库级设置，忘了这发，所有外键静默失效、跨项目隔离直接失守；
+- `.env` 的 `DATABASE_PASSWORD` 含 `#` 等字符时必须双引号包裹；**`.env` 没有热通道**，改任何一颗都要重启；
+- Nuxt UI v4 与 v3 组件名差异大（如按钮组改名 `UFieldGroup`），写组件前对照实际导出；下拉菜单的搜索框用 `:filter` prop 而非头插槽（后者在 v4 渲染为空）；表格定宽列必须配 `min-w`（自适应布局下只写宽度会被撑满的列挤回最小内容宽）；
+- **未注册组件这类错误 typecheck 查不出来**（Vue 运行时才报）—— 界面改动请实际打开浏览器点一遍。本项目「静态全绿但点了才知道坏」的案例不止一次；
+- Windows 上服务握着的文件句柄删不掉（EPERM）：e2e 的环境清理必须赶在服务启动之前做完，这也是它不用框架自带全局前置脚本的原因；
+- Git Bash 下用 curl 传中文 JSON 会被 Windows 代码页转成乱码 —— **请求体一律走 UTF-8 文件**（`curl --data-binary @file.json`）；
+- 后端模块加载的 `createRequire` 基准是为局域网 Windows 起得来改的，**别回退** —— 开发模式不打包，看不见这个问题，一上生产包就炸；
+- 浏览器 API 先用「内网明文 http 下它在不在」过一遍筛：标准 UUID 生成函数、剪贴板接口在那里都不存在（都有兜底写法，别引回来）。
